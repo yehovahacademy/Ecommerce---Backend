@@ -101,13 +101,24 @@ export const adminLogin = async (req, res) => {
     }
 };
 
+// Accepts the full project URL, or just the project ref (e.g. "abcd1234"),
+// which is expanded to https://abcd1234.supabase.co.
+const normalizeSupabaseUrl = (value) => {
+    const trimmed = value?.trim().replace(/\/+$/, "");
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^[a-z0-9]+$/i.test(trimmed)) return `https://${trimmed}.supabase.co`;
+    return `https://${trimmed}`;
+};
+
 // POST /api/admin/auth/supabase  { accessToken }  (session.access_token from supabase-js)
 // The token is checked by asking Supabase who it belongs to, so revoked or
 // expired sessions are rejected and no JWT signing keys are needed here.
 export const supabaseAdminLogin = async (req, res) => {
     try {
         const { accessToken } = req.body || {};
-        const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env;
+        const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL);
+        const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY?.trim();
 
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
             console.error("Supabase admin login: SUPABASE_URL or SUPABASE_ANON_KEY is not set");
@@ -124,7 +135,7 @@ export const supabaseAdminLogin = async (req, res) => {
             });
         }
 
-        const response = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/auth/v1/user`, {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 apikey: SUPABASE_ANON_KEY,

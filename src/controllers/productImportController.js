@@ -1,5 +1,10 @@
 
 import { prisma } from "../config/prisma.js";
+import {
+    DUMMY_JSON_API_URL,
+    FAKE_STORE_API_URL,
+    OPENAPI_DATA_API_URL,
+} from "../config/externalApis.js";
 
 const slugify = (value) =>
     value
@@ -27,11 +32,11 @@ const getExternalProducts = async (source) => {
     let url;
 
     if (source === "dummyjson") {
-        url = `${process.env.DUMMY_JSON_API_URL}/products?limit=0`;
+        url = `${DUMMY_JSON_API_URL}/products?limit=0`;
     } else if (source === "fakestore") {
-        url = `${process.env.FAKE_STORE_API_URL}/products`;
+        url = `${FAKE_STORE_API_URL}/products`;
     } else if (source === "openapi") {
-        url = process.env.OPENAPI_DATA_API_URL;
+        url = OPENAPI_DATA_API_URL;
     } else {
         throw new Error("Unsupported product source");
     }

@@ -2,6 +2,7 @@
 import "dotenv/config";
 import { prisma } from "../config/prisma.js";
 import crypto from "node:crypto";
+import { FAKE_STORE_API_URL } from "../config/externalApis.js";
 
 // CREATE PRODUCT
 export const createProduct = async (req, res) => {
@@ -524,7 +525,7 @@ export const deleteProduct = async (req, res) => {
 export const getExternalProducts = async (req, res) => {
     try {
         const externalProducts = await fetch(
-            `${process.env.FAKE_STORE_API_URL}/products`
+            `${FAKE_STORE_API_URL}/products`
         );
 
         if (!externalProducts.ok) {

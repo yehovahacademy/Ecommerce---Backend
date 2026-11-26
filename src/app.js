@@ -29,6 +29,7 @@ app.use(cors({
         "http://localhost:5173",
         "http://localhost:5174",
         "https://deal-duniya-user-frontend.vercel.app",
+        "https://deal-duniya-admin-frontend.vercel.app",
     ],
     credentials: true,
 }));

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../config/prisma.js";
 import { generateToken } from "../utils/generateToken.js";
-import { success } from "zod";
+
 
 export const registerUser = async (req, res) => {
     try {
@@ -14,6 +14,9 @@ export const registerUser = async (req, res) => {
                 message:"All fields are required"
             });
         }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
         
 
         if(password.length < 8){
@@ -24,7 +27,7 @@ export const registerUser = async (req, res) => {
         }
 
         const existingUser = await prisma.user.findUnique({
-            where: {email},
+            where: {email: normalizedEmail},
         });
 
         if(existingUser){
@@ -39,7 +42,7 @@ export const registerUser = async (req, res) => {
         const user = await prisma.user.create({
             data:{
                 name,
-                email,
+                email: normalizedEmail,
                 passwordHash,
                 role:"USER",
             },
@@ -87,23 +90,26 @@ export const loginUser = async (req, res) => {
         where:{email: normalizedEmail}
     })
 
-    if(!user || !user.passwordHash){
-        return res.status(400).json({
-            success:false,
-            message:"Invalid email or password"
-        });
-    }
+    if (!user || !user.passwordHash) {
+    return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+    });
+}
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+const isPasswordValid = await bcrypt.compare(
+    password,
+    user.passwordHash
+);
 
-    if(!isPasswordValid){
-        return res.status(401).json({
-            success:false,
-            message:"Invalid Password"
-        });
-    }
+if (!isPasswordValid) {
+    return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+    });
+}
 
-    if(user.role === "USER"){
+    if(user.role !== "USER"){
         return res.status(403).json({
             success: false,
             message: "Customer access denied"

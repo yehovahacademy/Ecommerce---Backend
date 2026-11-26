@@ -29,7 +29,7 @@ export const googleAdminLogin = async (req, res) => {
           
             return res.status(401).json({
                 success:false,
-                messag: "Google Account verification is failed"
+                message: "Google Account verification is failed"
             });
         }
 

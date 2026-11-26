@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { prisma } from "../config/prisma.js";
+import {prisma } from "../config/prisma.js";
 
 export const getAllCategories = async (req, res) => {
   try {

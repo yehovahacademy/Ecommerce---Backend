@@ -1,10 +1,31 @@
-import { prisma } from "../config/prisma.js";
 
+import "dotenv/config";
+import { prisma } from "../config/prisma.js";
 import crypto from "node:crypto";
 
+// CREATE PRODUCT
 export const createProduct = async (req, res) => {
     try {
-        const { name, description, price, stock, categoryId, sku } = req.body;
+        const {
+            name,
+            description,
+            price,
+            stock,
+            categoryId,
+            sku,
+            isActive
+        } = req.body;
+
+        // Validate isActive
+        if (
+            isActive !== undefined &&
+            typeof isActive !== "boolean"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "isActive must be a boolean"
+            });
+        }
 
         // Validate name
         if (typeof name !== "string" || !name.trim()) {
@@ -94,6 +115,7 @@ export const createProduct = async (req, res) => {
                 description: description.trim(),
                 price: Number(price),
                 stock: Number(stock),
+                isActive: isActive ?? true,
                 category: {
                     connect: {
                         id: normalizedCategoryId
@@ -129,7 +151,8 @@ export const createProduct = async (req, res) => {
     }
 };
 
-//Get all products
+
+// GET ALL PRODUCTS
 // Public storefront: only active products
 export const getAllProducts = async (req, res) => {
     try {
@@ -163,7 +186,7 @@ export const getAllProducts = async (req, res) => {
 };
 
 
-// Admin: show active and inactive products
+// ADMIN: GET ACTIVE AND INACTIVE PRODUCTS
 export const getAdminProducts = async (req, res) => {
     try {
         const products = await prisma.product.findMany({
@@ -192,54 +215,54 @@ export const getAdminProducts = async (req, res) => {
     }
 };
 
-//GET Product by ID.
 
-export const getProductsById = async (req,res) => {
+// GET PRODUCT BY ID
+export const getProductsById = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
-        if(!id || typeof id !== "string" || !id.trim()){
-           return res.status(400).json({
-            success:false,
-            message: "Valid product Id is required"
-           });
+        if (!id || typeof id !== "string" || !id.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid product Id is required"
+            });
         }
 
         const product = await prisma.product.findUnique({
-            where:{
-                id
+            where: {
+                id: id.trim()
             },
-            include:{
+            include: {
                 category: true,
                 images: true
             }
         });
 
-          if(!product){
+        if (!product) {
             return res.status(404).json({
-                success:false,
+                success: false,
                 message: "Product not found"
-            })
+            });
         }
 
         return res.status(200).json({
-            success:true,
-            data:product,
-            message:"Fetched the product successfully"
+            success: true,
+            data: product,
+            message: "Fetched the product successfully"
         });
 
-    }catch(error){
-        console.error("Couldn't fetch the productId", error)
+    } catch (error) {
+        console.error("Couldn't fetch the productId", error);
 
         return res.status(500).json({
-            success:false,
-            message:"Failed to fetch product"
-        })
-
+            success: false,
+            message: "Failed to fetch product"
+        });
     }
-}
+};
 
 
+// UPDATE PRODUCT
 export const updateProduct = async (req, res) => {
     try {
         const {
@@ -248,7 +271,8 @@ export const updateProduct = async (req, res) => {
             categoryId,
             price,
             stock,
-            sku
+            sku,
+            isActive
         } = req.body;
 
         const { id } = req.params;
@@ -390,6 +414,18 @@ export const updateProduct = async (req, res) => {
             };
         }
 
+        // Validate and update isActive
+        if (isActive !== undefined) {
+            if (typeof isActive !== "boolean") {
+                return res.status(400).json({
+                    success: false,
+                    message: "isActive must be a boolean"
+                });
+            }
+
+            updateData.isActive = isActive;
+        }
+
         // Prevent empty updates
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({
@@ -434,8 +470,7 @@ export const updateProduct = async (req, res) => {
 };
 
 
-// DELETE a PRODUCT
-
+// DELETE A PRODUCT (SOFT DELETE)
 export const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -480,6 +515,39 @@ export const deleteProduct = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal server error"
+        });
+    }
+};
+
+
+// GET EXTERNAL PRODUCTS (FAKE STORE)
+export const getExternalProducts = async (req, res) => {
+    try {
+        const externalProducts = await fetch(
+            `${process.env.FAKE_STORE_API_URL}/products`
+        );
+
+        if (!externalProducts.ok) {
+            return res.status(502).json({
+                success: false,
+                message: "Failed to fetch External products"
+            });
+        }
+
+        const response = await externalProducts.json();
+
+        return res.status(200).json({
+            success: true,
+            products: response,
+            message: "External Products fetched Successfully"
+        });
+
+    } catch (error) {
+        console.error("Failed to Load External Products", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server error"
         });
     }
 };
